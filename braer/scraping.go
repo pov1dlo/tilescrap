@@ -3,9 +3,20 @@ package braer
 import (
 	"fmt"
 	"log"
+	uagent "tilescrap/useragent"
 
 	"github.com/gocolly/colly"
 )
+
+var SiteURL string
+var UserAgent string
+
+func init() {
+
+	SiteURL = "https://тротуарная-плитка-браер.рф/"
+	UserAgent = uagent.GetUserAgent()
+
+}
 
 func Scrap() {
 
@@ -28,14 +39,19 @@ func scrapOfficial1() {
 
 func scrapOfficial2() {
 
-	SiteURL := "https://тротуарная-плитка-браер.рф/"
-	UserAgent := "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.0 Safari/537.36"
-
 	c := colly.NewCollector()
 	c.AllowURLRevisit = false
 	c.UserAgent = UserAgent
 
 	productColly := c.Clone()
+
+	c.OnRequest(func(r *colly.Request) {
+		log.Println("Переходим на", r.URL)
+	})
+
+	c.OnError(func(r *colly.Response, err error) {
+		log.Fatalf("Код ответа: %d\nНе удалось подключиться к сайту по причине %s", r.StatusCode, err)
+	})
 
 	c.OnHTML("body", func(b *colly.HTMLElement) {
 
@@ -66,7 +82,7 @@ func scrapOfficial2() {
 	})
 
 	productColly.OnRequest(func(r *colly.Request) {
-		log.Println("Visiting ", r.URL)
+		log.Println("Переходим на ", r.URL)
 	})
 
 	c.Visit(SiteURL)

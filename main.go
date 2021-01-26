@@ -1,10 +1,13 @@
 package main
 
-import "tilescrap/steingot"
+import (
+	"tilescrap/vibor"
+)
 
 func main() {
 
 	//braer.Scrap()
-	steingot.Scrap()
+	//steingot.Scrap()
+	vibor.Scrap()
 
 }
