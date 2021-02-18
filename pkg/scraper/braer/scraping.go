@@ -3,14 +3,13 @@ package braer
 import (
 	"log"
 	"tilescrap/pkg/csvmodel"
-	"tilescrap/pkg/useragent"
 
 	"github.com/gocolly/colly"
+	"github.com/gocolly/colly/extensions"
 )
 
 var vendor string
 var url string
-var userAgent string
 
 var data []*csvmodel.Model
 
@@ -20,8 +19,6 @@ func NewScraper(v, URL string) *BraerScraper {
 
 	vendor = v
 	url = URL
-	//userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36/8mqQhSuL-09"
-	userAgent = useragent.GetUserAgent()
 	return &BraerScraper{}
 }
 
@@ -29,7 +26,8 @@ func (s *BraerScraper) Scrap(scrapingData chan<- []*csvmodel.Model) {
 
 	c := colly.NewCollector()
 	c.AllowURLRevisit = false
-	c.UserAgent = userAgent
+
+	extensions.RandomUserAgent(c)
 
 	p := c.Clone()
 

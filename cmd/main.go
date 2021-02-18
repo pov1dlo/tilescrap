@@ -5,6 +5,8 @@ import (
 	"os"
 	"tilescrap/pkg/csvmodel"
 	"tilescrap/pkg/scraper"
+	"tilescrap/pkg/scraper/braer"
+	"tilescrap/pkg/scraper/steingot"
 	"tilescrap/pkg/scraper/vibor"
 )
 
@@ -35,12 +37,12 @@ func main() {
 
 	writer.Flush()
 
-	/* scrapers = append(scrapers,
-	braer.NewScraper("Braer", "https://тротуарная-плитка-браер.рф/"),
-	steingot.NewScraper("Steingot", "https://steingot.ru/katalog/"),
-	vibor.NewScraper("Выбор", "https://купиплитку.рф")) */
+	scrapers = append(scrapers,
+		braer.NewScraper("Braer", "https://тротуарная-плитка-браер.рф/"),
+		steingot.NewScraper("Steingot", "https://steingot.ru/katalog/"),
+		vibor.NewScraper("Выбор", "https://купиплитку.рф"))
 
-	scrapers = append(scrapers, vibor.NewScraper("Выбор", "https://купиплитку.рф"))
+	//scrapers = append(scrapers, steingot.NewScraper("Steingot", "https://steingot.ru/katalog/"))
 
 	scrapingData = make(chan []*csvmodel.Model, len(scrapers))
 

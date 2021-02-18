@@ -5,14 +5,13 @@ import (
 	"log"
 	"strings"
 	"tilescrap/pkg/csvmodel"
-	"tilescrap/pkg/useragent"
 
 	"github.com/gocolly/colly"
+	"github.com/gocolly/colly/extensions"
 )
 
 var vendor string
 var url string
-var userAgent string
 
 var data []*csvmodel.Model
 
@@ -22,7 +21,6 @@ func NewScraper(v, URL string) *VibortScraper {
 
 	vendor = v
 	url = URL
-	userAgent = useragent.GetUserAgent()
 	return &VibortScraper{}
 }
 
@@ -30,8 +28,8 @@ func (s *VibortScraper) Scrap(scrapingData chan<- []*csvmodel.Model) {
 
 	c := colly.NewCollector()
 	c.AllowURLRevisit = false
-	//c.CheckHead = true
-	c.UserAgent = userAgent
+
+	extensions.RandomUserAgent(c)
 
 	p := c.Clone()
 
@@ -50,14 +48,6 @@ func (s *VibortScraper) Scrap(scrapingData chan<- []*csvmodel.Model) {
 		})
 	})
 
-	/* c.OnHTML("body", func(b *colly.HTMLElement) {
-		b.ForEach("div.title_blok_rith_menu a", func(i int, a *colly.HTMLElement) {
-			link := a.Attr("href")
-			link = a.Request.AbsoluteURL(link)
-			p.Visit(link)
-		})
-	}) */
-
 	p.OnRequest(onRequest)
 
 	p.OnError(func(r *colly.Response, err error) {
@@ -71,6 +61,7 @@ func (s *VibortScraper) Scrap(scrapingData chan<- []*csvmodel.Model) {
 			inStock := prod.ChildText(".catalog__status-availability > span")
 			collection := prod.ChildText(".product-line__collection > .product-line__collection-inner")
 			price := prod.ChildText(".product-price .product-price__numb > .product-price__c")
+			price = strings.TrimSuffix(price, "Руб.")
 
 			var char string
 			prod.ForEach(".product-line-char", func(i int, pch *colly.HTMLElement) {
@@ -82,7 +73,7 @@ func (s *VibortScraper) Scrap(scrapingData chan<- []*csvmodel.Model) {
 				val = strings.ReplaceAll(val, "\n", "")
 
 				if key != "" && val != "" {
-					char += fmt.Sprintf("%s: %s\n", key, val)
+					char += fmt.Sprintf("%s: %s; ", key, val)
 				}
 			})
 
@@ -91,6 +82,7 @@ func (s *VibortScraper) Scrap(scrapingData chan<- []*csvmodel.Model) {
 				Product:         name,
 				Characteristics: char,
 				Price:           price,
+				PriceCurrency:   "RUB",
 				InStock:         inStock,
 				Collection:      collection,
 				URL:             b.Request.URL.String(),
