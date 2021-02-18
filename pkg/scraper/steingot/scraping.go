@@ -1,7 +1,6 @@
 package steingot
 
 import (
-	"fmt"
 	"log"
 	"strings"
 	"tilescrap/pkg/csvmodel"
@@ -32,7 +31,6 @@ func (s *SteingotScraper) Scrap(scrapingData chan<- []*csvmodel.Model) {
 	extensions.RandomUserAgent(c)
 
 	p := c.Clone()
-	p.AllowURLRevisit = true
 
 	c.OnRequest(onRequest)
 
@@ -59,6 +57,7 @@ func (s *SteingotScraper) Scrap(scrapingData chan<- []*csvmodel.Model) {
 	})
 
 	p.OnHTML("body", func(b *colly.HTMLElement) {
+
 		b.ForEach("div.product-catalog__product-item", func(i int, prod *colly.HTMLElement) {
 			name := prod.ChildText("div.product-catalog__product-item-name")
 			price := prod.ChildText("div.product-catalog__product-item-cost:nth-child(1)")
@@ -70,11 +69,12 @@ func (s *SteingotScraper) Scrap(scrapingData chan<- []*csvmodel.Model) {
 				Product:       name,
 				Price:         price,
 				PriceCurrency: priceCurrency,
+				URL:           b.Request.URL.String(),
 			})
 		})
 
+		// Paginate
 		nextpage := b.ChildAttr(".product-catalog__page-number-next", "href")
-		fmt.Println(nextpage, "\n")
 		if nextpage != "" {
 			link := b.Request.AbsoluteURL(nextpage)
 			p.Visit(link)

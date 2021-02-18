@@ -42,15 +42,11 @@ func main() {
 		steingot.NewScraper("Steingot", "https://steingot.ru/katalog/"),
 		vibor.NewScraper("Выбор", "https://купиплитку.рф"))
 
-	//scrapers = append(scrapers, steingot.NewScraper("Steingot", "https://steingot.ru/katalog/"))
-
 	scrapingData = make(chan []*csvmodel.Model, len(scrapers))
 
 	for _, s := range scrapers {
 		go s.Scrap(scrapingData)
 	}
-
-	defer close(scrapingData)
 
 	for i := 0; i < len(scrapers); i++ {
 		data := <-scrapingData
