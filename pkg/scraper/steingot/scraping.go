@@ -3,18 +3,37 @@ package steingot
 import (
 	"fmt"
 	"log"
+	"tilescrap/pkg/csvmodel"
+	"tilescrap/pkg/useragent"
 
 	"github.com/gocolly/colly"
 )
 
-func Scrap() {
+var vendor string
+var url string
+var userAgent string
 
-	SiteURL := "https://steingot.ru/katalog/"
-	UserAgent := "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.0 Safari/537.36"
+var data []*csvmodel.Model
 
+type SteingotScraper struct{}
+
+func NewScraper(v, URL string) *SteingotScraper {
+
+	vendor = v
+	url = URL
+	userAgent = useragent.GetUserAgent()
+	return &SteingotScraper{}
+}
+
+func (s *SteingotScraper) Scrap(scrapingData chan<- []*csvmodel.Model) {
+
+	scrapingData <- nil
+	return
+
+	// парсинг еще не готов
 	c := colly.NewCollector()
 	c.AllowURLRevisit = false
-	c.UserAgent = UserAgent
+	c.UserAgent = userAgent
 
 	c.OnHTML("dic.product-catalog__categories", func(e *colly.HTMLElement) {
 
@@ -33,5 +52,6 @@ func Scrap() {
 		log.Println("Visiting", r.URL)
 	})
 
-	c.Visit(SiteURL)
+	c.Visit(url)
+
 }

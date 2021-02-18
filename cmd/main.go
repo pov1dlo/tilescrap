@@ -5,7 +5,7 @@ import (
 	"os"
 	"tilescrap/pkg/csvmodel"
 	"tilescrap/pkg/scraper"
-	"tilescrap/pkg/scraper/braer"
+	"tilescrap/pkg/scraper/vibor"
 )
 
 var scrapers []scraper.Scraper
@@ -35,8 +35,12 @@ func main() {
 
 	writer.Flush()
 
-	scrapers = append(scrapers,
-		braer.NewScraper("Braer", "https://тротуарная-плитка-браер.рф/"))
+	/* scrapers = append(scrapers,
+	braer.NewScraper("Braer", "https://тротуарная-плитка-браер.рф/"),
+	steingot.NewScraper("Steingot", "https://steingot.ru/katalog/"),
+	vibor.NewScraper("Выбор", "https://купиплитку.рф")) */
+
+	scrapers = append(scrapers, vibor.NewScraper("Выбор", "https://купиплитку.рф"))
 
 	scrapingData = make(chan []*csvmodel.Model, len(scrapers))
 
@@ -46,8 +50,14 @@ func main() {
 
 	defer close(scrapingData)
 
-	for sd := range scrapingData {
-		for _, s := range sd {
+	for i := 0; i < len(scrapers); i++ {
+		data := <-scrapingData
+
+		if data == nil {
+			continue
+		}
+
+		for _, s := range data {
 			writer.Write([]string{
 				s.Vendor,
 				s.Product,

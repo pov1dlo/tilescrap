@@ -4,32 +4,43 @@ import (
 	"fmt"
 	"log"
 	"strings"
-
-	uagent "tilescrap/useragent"
+	"tilescrap/pkg/csvmodel"
+	"tilescrap/pkg/useragent"
 
 	"github.com/gocolly/colly"
 )
 
-var SiteURL string
-var UserAgent string
+var vendor string
+var url string
+var userAgent string
 
-func init() {
+var data []*csvmodel.Model
 
-	SiteURL = "https://купиплитку.рф"
-	UserAgent = uagent.GetUserAgent()
+type VibortScraper struct{}
+
+func NewScraper(v, URL string) *VibortScraper {
+
+	vendor = v
+	url = URL
+	userAgent = useragent.GetUserAgent()
+	return &VibortScraper{}
 }
 
-func Scrap() {
+func (s *VibortScraper) Scrap(scrapingData chan<- []*csvmodel.Model) {
 
 	c := colly.NewCollector()
-	c.CheckHead = true
-	c.UserAgent = UserAgent
+	c.AllowURLRevisit = false
+	//c.CheckHead = true
+	c.UserAgent = userAgent
 
 	p := c.Clone()
 
 	c.OnRequest(onRequest)
 
-	c.OnError(onError)
+	c.OnError(func(r *colly.Response, err error) {
+		log.Printf("Код ответа: %d\nНе удалось подключиться к сайту по причине %s\n", r.StatusCode, err)
+		scrapingData <- nil
+	})
 
 	c.OnHTML("div.title_blok_rith_menu", func(d *colly.HTMLElement) {
 		d.ForEach("a", func(i int, e *colly.HTMLElement) {
@@ -39,9 +50,19 @@ func Scrap() {
 		})
 	})
 
+	/* c.OnHTML("body", func(b *colly.HTMLElement) {
+		b.ForEach("div.title_blok_rith_menu a", func(i int, a *colly.HTMLElement) {
+			link := a.Attr("href")
+			link = a.Request.AbsoluteURL(link)
+			p.Visit(link)
+		})
+	}) */
+
 	p.OnRequest(onRequest)
 
-	p.OnError(onError)
+	p.OnError(func(r *colly.Response, err error) {
+		log.Printf("Код ответа: %d\nНе удалось подключиться к сайту по причине %s\n", r.StatusCode, err)
+	})
 
 	p.OnHTML("body", func(b *colly.HTMLElement) {
 		b.ForEach("div.product-line", func(i int, prod *colly.HTMLElement) {
@@ -50,10 +71,6 @@ func Scrap() {
 			inStock := prod.ChildText(".catalog__status-availability > span")
 			collection := prod.ChildText(".product-line__collection > .product-line__collection-inner")
 			price := prod.ChildText(".product-price .product-price__numb > .product-price__c")
-			//old_price := 0
-			//urlImg := prod.ChildAttr(".products-item__image > img", "src")
-
-			//fmt.Println(name, inStock, collection, price, urlImg)
 
 			var char string
 			prod.ForEach(".product-line-char", func(i int, pch *colly.HTMLElement) {
@@ -69,53 +86,26 @@ func Scrap() {
 				}
 			})
 
-			fmt.Println(char)
-
+			data = append(data, &csvmodel.Model{
+				Vendor:          vendor,
+				Product:         name,
+				Characteristics: char,
+				Price:           price,
+				InStock:         inStock,
+				Collection:      collection,
+				URL:             b.Request.URL.String(),
+			})
 		})
 	})
 
-	c.Visit(SiteURL)
+	c.OnScraped(func(r *colly.Response) {
+		scrapingData <- data
+	})
+
+	c.Visit(url)
 
 }
 
 func onRequest(r *colly.Request) {
-	log.Println("Переходим на", r.URL)
+	log.Println("Переходим на", r.URL.String())
 }
-
-func onError(r *colly.Response, err error) {
-	log.Fatalf("Не удалось подключиться к сайту по причине %s\nКод ответа: %d\n", err, r.StatusCode)
-}
-
-/*
-   char = ''
-
-   product_char = goods.select('.product-line-char')
-   for pch in product_char:
-       product_char_key = pch.select_one('.product-line-char__title')
-       product_char_value = pch.select_one('.product-property__value')
-
-       if product_char_key is not None and product_char_value is not None:
-           char += "{}: {}".format(product_char_key.get_text(), product_char_value.get_text()) \
-               .replace('\t', '') \
-               .replace('\n', '') \
-               .strip()
-
-           char += '\n'
-
-   product_char_color = goods.select_one('.product-line-char-color')
-   if product_char_color is not None:
-       product_char_key = product_char_color.select_one('.product-line-char__title')
-       product_char_value = product_char_color.select_one('.product-line__collection-inner > img')
-
-       if product_char_key is not None and product_char_value is not None:
-           char += "{}: {}".format(product_char_key.get_text(), product_char_value.get_text())\
-               .replace('\t', '')\
-               .replace('\n', '')\
-               .strip()
-
-           char += '\n'
-
-   args['char'] = char
-
-   GOODS.append(args)
-*/
