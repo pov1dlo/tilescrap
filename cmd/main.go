@@ -2,19 +2,42 @@ package main
 
 import (
 	"encoding/csv"
+	"flag"
+	"fmt"
+	"log"
 	"os"
 	"tilescrap/pkg/csvmodel"
 	"tilescrap/pkg/scraper"
 	"tilescrap/pkg/scraper/braer"
 	"tilescrap/pkg/scraper/steingot"
 	"tilescrap/pkg/scraper/vibor"
+	"time"
+
+	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 var scrapers []scraper.Scraper
 var scrapingData chan []*csvmodel.Model
 var writer *csv.Writer
+var useTBot bool
+var tokenTBot string
+var chatID int64
+
+func init() {
+
+	flag.StringVar(&tokenTBot, "token", "", "Telegram token")
+	flag.Int64Var(&chatID, "сhat", 0, "Telegram channel")
+
+}
 
 func main() {
+
+	flag.Parse()
+
+	if tokenTBot != "" && chatID > 0 {
+		chatID -= chatID
+		useTBot = true
+	}
 
 	file, _ := os.Create("result.csv")
 	defer file.Close()
@@ -31,7 +54,7 @@ func main() {
 		"Цена",
 		"Валюта",
 		"В наличии",
-		"Колекция",
+		"Коллекция",
 		"Описание",
 		"Ссылка"})
 
@@ -71,4 +94,32 @@ func main() {
 	}
 
 	file.Close()
+
+	if useTBot == true {
+		bot, err := tb.NewBot(
+			tb.Settings{
+				Token: tokenTBot,
+			})
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		time.Sleep(time.Second * 1)
+
+		group := tb.ChatID(chatID)
+
+		currentDate := time.Now().Format("02.01.2006")
+		document := tb.Document{
+
+			File:     tb.FromDisk("result.csv"),
+			FileName: fmt.Sprintf("Цены конкурентов от %s.csv", currentDate),
+		}
+
+		_, err = bot.Send(group, &document)
+		if err != nil {
+			log.Println(err)
+		}
+
+	}
 }

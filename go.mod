@@ -14,4 +14,5 @@ require (
 	go.mongodb.org/mongo-driver v1.4.5 // indirect
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
+	gopkg.in/tucnak/telebot.v2 v2.3.5
 )
