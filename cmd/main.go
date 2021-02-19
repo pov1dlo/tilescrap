@@ -20,22 +20,16 @@ var scrapers []scraper.Scraper
 var scrapingData chan []*csvmodel.Model
 var writer *csv.Writer
 var useTBot bool
-var tokenTBot string
-var chatID int64
-
-func init() {
-
-	flag.StringVar(&tokenTBot, "token", "", "Telegram token")
-	flag.Int64Var(&chatID, "сhat", 0, "Telegram channel")
-
-}
 
 func main() {
 
+	tokenTBot := flag.String("token", "", "Telegram token")
+	chatID := flag.Int64("chat", 0, "Telegram channel")
+
 	flag.Parse()
 
-	if tokenTBot != "" && chatID > 0 {
-		chatID -= chatID
+	if *tokenTBot != "" && *chatID != 0 {
+
 		useTBot = true
 	}
 
@@ -98,7 +92,7 @@ func main() {
 	if useTBot == true {
 		bot, err := tb.NewBot(
 			tb.Settings{
-				Token: tokenTBot,
+				Token: *tokenTBot,
 			})
 
 		if err != nil {
@@ -107,7 +101,7 @@ func main() {
 
 		time.Sleep(time.Second * 1)
 
-		group := tb.ChatID(chatID)
+		group := tb.ChatID(*chatID)
 
 		currentDate := time.Now().Format("02.01.2006")
 		document := tb.Document{
